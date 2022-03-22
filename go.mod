@@ -1,6 +1,6 @@
 module github.com/moonrhythm/pdfserver
 
-go 1.17
+go 1.18
 
 require (
 	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.7.2
@@ -9,6 +9,6 @@ require (
 
 require (
 	github.com/kavu/go_reuseport v1.5.0 // indirect
-	golang.org/x/net v0.0.0-20211111160137-58aab5ef257a // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/text v0.3.7 // indirect
 )

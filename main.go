@@ -32,6 +32,12 @@ type requestData struct {
 	PageSize    string   `json:"pageSize"`
 	Orientation string   `json:"orientation"`
 	Pages       []string `json:"pages"`
+	Margin      struct {
+		Top    *uint `json:"top"`
+		Bottom *uint `json:"bottom"`
+		Left   *uint `json:"left"`
+		Right  *uint `json:"right"`
+	} `json:"margin"`
 }
 
 func generatePDF(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +72,10 @@ func generatePDF(w http.ResponseWriter, r *http.Request) {
 	pdf.Dpi.Set(uint(req.DPI))
 	pdf.PageSize.Set(req.PageSize)
 	pdf.Orientation.Set(req.Orientation)
+	setUint(req.Margin.Top, &pdf.MarginTop)
+	setUint(req.Margin.Bottom, &pdf.MarginBottom)
+	setUint(req.Margin.Left, &pdf.MarginLeft)
+	setUint(req.Margin.Right, &pdf.MarginRight)
 
 	for _, page := range req.Pages {
 		pdf.AddPage(wkhtmltopdf.NewPageReader(strings.NewReader(page)))
@@ -79,4 +89,11 @@ func generatePDF(w http.ResponseWriter, r *http.Request) {
 		log.Printf("create pdf error; err=%v", err)
 		return
 	}
+}
+
+func setUint(v *uint, m interface{ Set(uint) }) {
+	if v == nil {
+		return
+	}
+	m.Set(*v)
 }

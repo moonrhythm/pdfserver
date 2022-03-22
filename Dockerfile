@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY --from=0 /workspace/pdfserver ./
+COPY --from=0 --link /workspace/pdfserver ./
 
 EXPOSE 8080
 
