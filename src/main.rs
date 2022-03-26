@@ -1,6 +1,6 @@
 use std::{
     convert::Infallible,
-    net::SocketAddr
+    net::SocketAddr,
 };
 use bytes::Buf;
 use futures::StreamExt;
@@ -10,7 +10,7 @@ use chromiumoxide::{
 };
 use hyper::{
     Body, header, Method, Request, Response, Server,
-    service::{make_service_fn, service_fn}
+    service::{make_service_fn, service_fn},
 };
 use serde::{Deserialize, Serialize};
 
@@ -56,7 +56,7 @@ async fn shutdown_signal() {
 #[derive(Serialize, Deserialize)]
 struct PdfRequest {
     content: String,
-    scale: Option<f64>
+    scale: Option<f64>,
 }
 
 async fn handler(req: Request<Body>) -> Result<Response<Body>> {
@@ -64,31 +64,20 @@ async fn handler(req: Request<Body>) -> Result<Response<Body>> {
         return Ok(Response::new("PDF Server".into()));
     }
 
-    // TODO: improve error response
-
     let body = hyper::body::aggregate(req).await?;
-    let data: PdfRequest = serde_json::from_reader(body.reader())?;
 
-    // TODO: global browser ?
-    let browser_config = BrowserConfig::builder()
-        .build()?;
-    let (browser, mut handler) = match Browser::launch(browser_config).await {
-        Ok(r) => Ok(r),
+    let data: PdfRequest = match serde_json::from_reader(body.reader()) {
+        Ok(r) => r,
         Err(e) => {
-            eprintln!("can not launch browser, err={:?}", e);
-            Err(e)
+            let resp = Response::builder()
+                .status(400)
+                .body(Body::from(format!("invalid request {:?}", e)))
+                .unwrap();
+            return Ok(resp);
         }
-    }?;
-    tokio::spawn(async move {
-        // loop {
-        let _ = handler.next().await.unwrap();
-        // }
-    });
+    };
 
-    let page = browser.new_page("about:blank").await?;
-    page.set_content(data.content.as_str()).await?;
-
-    let pdf_params = PrintToPdfParams{
+    let pdf_params = PrintToPdfParams {
         landscape: false.into(),
         display_header_footer: false.into(),
         print_background: true.into(),
@@ -104,13 +93,47 @@ async fn handler(req: Request<Body>) -> Result<Response<Body>> {
         header_template: None,
         footer_template: None,
         prefer_css_page_size: None,
-        transfer_mode: None
+        transfer_mode: None,
     };
-    let pdf_data = page.pdf(pdf_params).await?;
+    let pdf_data: Vec<u8>;
+    match do_convert_pdf(data.content.as_str(), pdf_params).await {
+        Ok(data) => {
+            pdf_data = data;
+        }
+        Err(e) => {
+            eprintln!("can not convert pdf, err={:?}", e);
+            let resp = Response::builder()
+                .status(500)
+                .body(Body::from("can not convert pdf"))
+                .unwrap();
+            return Ok(resp);
+        }
+    }
 
     let resp = Response::builder()
         .header(header::CONTENT_TYPE, "application/pdf")
         .body(Body::from(pdf_data))
         .unwrap();
     Ok(resp)
+}
+
+async fn do_convert_pdf(content: &str, params: PrintToPdfParams) -> Result<Vec<u8>> {
+    // TODO: global browser ?
+    let browser_config = BrowserConfig::builder()
+        .build()?;
+
+    let (browser, mut handler) = Browser::launch(browser_config).await?;
+    tokio::spawn(async move {
+        // loop {
+        let _ = handler.next().await.unwrap();
+        // }
+    });
+
+    let page = browser.new_page("about:blank").await?;
+    page.set_content(content).await?;
+
+    match page.pdf(params).await {
+        Ok(data) => Ok(data),
+        Err(e) => Err(e.into())
+    }
 }
