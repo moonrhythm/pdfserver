@@ -95,11 +95,8 @@ async fn handler(req: Request<Body>) -> Result<Response<Body>> {
         prefer_css_page_size: None,
         transfer_mode: None,
     };
-    let pdf_data: Vec<u8>;
-    match do_convert_pdf(data.content.as_str(), pdf_params).await {
-        Ok(data) => {
-            pdf_data = data;
-        }
+    let pdf_data = match do_convert_pdf(data.content.as_str(), pdf_params).await {
+        Ok(r) => r,
         Err(e) => {
             eprintln!("can not convert pdf, err={:?}", e);
             let resp = Response::builder()
@@ -108,7 +105,7 @@ async fn handler(req: Request<Body>) -> Result<Response<Body>> {
                 .unwrap();
             return Ok(resp);
         }
-    }
+    };
 
     let resp = Response::builder()
         .header(header::CONTENT_TYPE, "application/pdf")
