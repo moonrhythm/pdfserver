@@ -1,0 +1,6 @@
+/target
+/.idea
+Dockerfile
+Makefile
+README.md
+LICENSE
