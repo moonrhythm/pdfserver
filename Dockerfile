@@ -1,25 +1,20 @@
-FROM golang
-
-ENV CGO_ENABLED=1
+FROM rust:1.59
 
 WORKDIR /workspace
 
-ADD go.mod go.sum ./
-RUN go mod download
 ADD . .
-RUN go build -o pdfserver -ldflags "-w -s" .
+RUN cargo build --release
 
 FROM debian:stable-slim
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     tzdata \
-    wkhtmltopdf \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY --from=0 --link /workspace/pdfserver ./
+COPY --from=0 --link /workspace/target/release/pdfserver ./
 
 EXPOSE 8080
 
