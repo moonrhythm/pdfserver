@@ -1,9 +1,17 @@
-use std::convert::Infallible;
-use std::net::SocketAddr;
+use std::{
+    convert::Infallible,
+    net::SocketAddr
+};
 use bytes::Buf;
-use headless_chrome::{Browser, protocol::page::PrintToPdfOptions};
-use hyper::{Body, header, Method, Request, Response, Server};
-use hyper::service::{make_service_fn, service_fn};
+use futures::StreamExt;
+use chromiumoxide::{
+    browser::{Browser, BrowserConfig},
+    cdp::browser_protocol::page::PrintToPdfParams,
+};
+use hyper::{
+    Body, header, Method, Request, Response, Server,
+    service::{make_service_fn, service_fn}
+};
 use serde::{Deserialize, Serialize};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -17,11 +25,23 @@ async fn main() -> Result<()> {
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
+    // let (browser, mut handler) = Browser::launch(
+    //     BrowserConfig::builder()
+    //         .build()?
+    // ).await?;
+    // tokio::spawn(async move {
+    //     loop {
+    //         let _ = handler.next().await.unwrap();
+    //     }
+    // });
+
     let make_svc = make_service_fn(|_conn| async {
         Ok::<_, Infallible>(service_fn(handler))
     });
 
-    let server = Server::bind(&addr).serve(make_svc);
+    let server = Server::bind(&addr)
+        .serve(make_svc)
+        .with_graceful_shutdown(shutdown_signal());
 
     println!("start pdf server on http://{}", addr);
     server.await?;
@@ -29,10 +49,14 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+async fn shutdown_signal() {
+    tokio::signal::ctrl_c().await.unwrap()
+}
+
 #[derive(Serialize, Deserialize)]
 struct PdfRequest {
     content: String,
-    scale: Option<f32>
+    scale: Option<f64>
 }
 
 async fn handler(req: Request<Body>) -> Result<Response<Body>> {
@@ -44,16 +68,27 @@ async fn handler(req: Request<Body>) -> Result<Response<Body>> {
 
     let body = hyper::body::aggregate(req).await?;
     let data: PdfRequest = serde_json::from_reader(body.reader())?;
-    let mut page_data: String = "data:text/html;base64,".to_owned();
-    page_data.push_str(base64::encode(data.content).as_str());
 
-    let browser = Browser::default()?;
-    let tab = browser.wait_for_initial_tab()?;
+    // TODO: global browser ?
+    let browser_config = BrowserConfig::builder()
+        .build()?;
+    let (browser, mut handler) = match Browser::launch(browser_config).await {
+        Ok(r) => Ok(r),
+        Err(e) => {
+            eprintln!("can not launch browser, err={:?}", e);
+            Err(e)
+        }
+    }?;
+    tokio::spawn(async move {
+        // loop {
+        let _ = handler.next().await.unwrap();
+        // }
+    });
 
-    tab.navigate_to(page_data.as_str())?;
-    tab.wait_until_navigated()?;
+    let page = browser.new_page("about:blank").await?;
+    page.set_content(data.content.as_str()).await?;
 
-    let pdf_opt = PrintToPdfOptions{
+    let pdf_params = PrintToPdfParams{
         landscape: false.into(),
         display_header_footer: false.into(),
         print_background: true.into(),
@@ -68,9 +103,10 @@ async fn handler(req: Request<Body>) -> Result<Response<Body>> {
         ignore_invalid_page_ranges: None,
         header_template: None,
         footer_template: None,
-        prefer_css_page_size: None
+        prefer_css_page_size: None,
+        transfer_mode: None
     };
-    let pdf_data = tab.print_to_pdf(pdf_opt.into())?;
+    let pdf_data = page.pdf(pdf_params).await?;
 
     let resp = Response::builder()
         .header(header::CONTENT_TYPE, "application/pdf")

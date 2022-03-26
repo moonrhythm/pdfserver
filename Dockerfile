@@ -1,16 +1,13 @@
-FROM rust:1.59
+FROM rust:1.59-alpine
+
+RUN apk add --no-cache musl-dev
 
 WORKDIR /workspace
 
 ADD . .
 RUN cargo build --release
 
-FROM debian:stable-slim
-
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    tzdata \
- && rm -rf /var/lib/apt/lists/*
+FROM zenika/alpine-chrome
 
 WORKDIR /app
 
