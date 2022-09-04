@@ -1,3 +1,6 @@
+build:
+	cargo build --release
+
 docker:
 	buildctl build \
 		--frontend dockerfile.v0 \
