@@ -53,6 +53,22 @@ async fn shutdown_signal() {
 struct PdfRequest {
     content: String,
     scale: Option<f64>,
+    paper: Option<PaperSize>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct PaperSize {
+    width: Option<f64>,
+    height: Option<f64>,
+}
+
+impl Default for PaperSize {
+    fn default() -> Self {
+        Self {
+            width: None,
+            height: None,
+        }
+    }
 }
 
 async fn handler(browser: Arc<Browser>, req: Request<Body>) -> Result<Response<Body>> {
@@ -72,13 +88,15 @@ async fn handler(browser: Arc<Browser>, req: Request<Body>) -> Result<Response<B
         }
     };
 
+    let paper = data.paper.unwrap_or_default();
+
     let pdf_params = PrintToPdfParams {
         landscape: false.into(),
         display_header_footer: false.into(),
         print_background: true.into(),
         scale: data.scale,
-        paper_width: None,
-        paper_height: None,
+        paper_width: paper.width,
+        paper_height: paper.height,
         margin_top: None,
         margin_bottom: None,
         margin_left: None,
