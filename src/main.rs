@@ -1,5 +1,6 @@
 use std::{convert::Infallible, net::SocketAddr};
 use std::sync::Arc;
+use std::thread::sleep;
 
 use bytes::Buf;
 use chromiumoxide::{browser::{Browser, BrowserConfig}, cdp::browser_protocol::page::PrintToPdfParams};
@@ -146,6 +147,15 @@ async fn do_convert_pdf(browser: Arc<Browser>,
                 return;
             }
         };
+        match page.wait_for_navigation().await {
+            Ok(p) => p,
+            Err(e) => {
+                let _ = page.close().await;
+                dbg!(e);
+                return;
+            }
+        };
+        sleep(std::time::Duration::from_millis(100)); // workaround for font loading
         let data = match page.pdf(params).await {
             Ok(p) => p,
             Err(e) => {
