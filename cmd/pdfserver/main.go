@@ -6,9 +6,11 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/acoshift/arpc/v2"
 	"github.com/moonrhythm/parapet"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/moonrhythm/pdfserver"
 )
@@ -20,6 +22,12 @@ func main() {
 	}
 	bindIP := os.Getenv("BIND_IP")
 	addr := net.JoinHostPort(bindIP, port)
+
+	concurrent, _ := strconv.Atoi(os.Getenv("CONCURRENT"))
+	if concurrent <= 0 {
+		concurrent = 5
+	}
+	sem = semaphore.NewWeighted(int64(concurrent))
 
 	m := arpc.New()
 	m.OnError(func(w http.ResponseWriter, r *http.Request, req any, err error) {
@@ -37,6 +45,14 @@ func main() {
 	}
 }
 
+var sem *semaphore.Weighted
+
 func handler(ctx context.Context, w http.ResponseWriter, r pdfserver.HTMLRequest) error {
+	err := sem.Acquire(ctx, 1)
+	if err != nil {
+		return err
+	}
+	defer sem.Release(1)
+
 	return pdfserver.PrintHTML(ctx, w, r)
 }

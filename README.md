@@ -62,9 +62,10 @@ $ http :8080 content="<h1>PDF Server</h1>" scale:=1 > file.pdf
 
 ## Env
 
-| Name | Desc      | Default |
-|------|-----------|---------|
-| PORT | HTTP Port | 8080    |
+| Name       | Desc           | Default |
+|------------|----------------|---------|
+| PORT       | HTTP Port      | 8080    |
+| CONCURRENT | Max Concurrent | 5       |
 
 ## Build
 
