@@ -10,11 +10,18 @@
 
 ## Body
 
-| Name    | Type      | Desc                   | Example               |
-|---------|-----------|------------------------|-----------------------|
-| content | string    | HTML for render to pdf | `<h1>PDF Server</h1>` |
-| scale   | number    | Print scale            | 1.0                   |
-| paper   | PaperSize | Paper size             | None                  |
+| Name        | Type             | Desc                   | Default         | Example               |
+|-------------|------------------|------------------------|-----------------|-----------------------|
+| content     | string           | HTML for render to pdf |                 | `<h1>PDF Server</h1>` |
+| scale       | number           | Print scale            | 1.0             | 1.0                   |
+| paper       | PaperSize        | Paper size             | A4              |                       |
+| margin      | Margin or number | Margin                 | 0.4             |                       |
+| background  | boolean          | Print Background       | true            | false                 |
+| pageRanges  | string           | Page ranges            |                 | "1-4,7"               |
+| header      | string           | Header template        | `<span></span>` |                       |
+| footer      | string           | Footer template        | `<span></span>` |                       |
+| cssPageSize | boolean          | Use CSS page size      | false           |                       |
+| landscape   | boolean          | Landscape              | false           |                       |
 
 ### PaperSize
 
@@ -22,6 +29,15 @@
 |--------|--------|
 | width  | number |
 | height | number |
+
+### Margin
+
+| Name   | Type   |
+|--------|--------|
+| top    | number |
+| right  | number |
+| bottom | number |
+| left   | number |
 
 ## Example
 
@@ -34,9 +50,11 @@ Content-Type: application/json; charset=utf-8
 
 ## Usage
 
+### As a web server
+
 ```shell
 # run
-$ cargo run
+$ go run ./cmd/pdfserver
 
 # generate pdf
 $ http :8080 content="<h1>PDF Server</h1>" scale:=1 > file.pdf
@@ -53,7 +71,7 @@ $ http :8080 content="<h1>PDF Server</h1>" scale:=1 > file.pdf
 ```shell
 $ make build
 # or
-$ cargo build --release
+$ go build -o pdfserver .
 ```
 
 ## Docker
