@@ -12,21 +12,31 @@ import (
 )
 
 type HTMLRequest struct {
-	Content     string    `json:"content"`
-	Scale       float64   `json:"scale"`
-	Paper       PaperSize `json:"paper"`
-	Margin      *Margin   `json:"margin"`
-	Background  *bool     `json:"background"`
-	PageRanges  string    `json:"pageRanges"`
-	Header      string    `json:"header"`
-	Footer      string    `json:"footer"`
-	CSSPageSize bool      `json:"cssPageSize"`
-	Landscape   bool      `json:"landscape"`
+	Content     string     `json:"content"`
+	Scale       float64    `json:"scale"`
+	Paper       *PaperSize `json:"paper"`
+	Margin      *Margin    `json:"margin"`
+	Background  *bool      `json:"background"`
+	PageRanges  string     `json:"pageRanges"`
+	Header      string     `json:"header"`
+	Footer      string     `json:"footer"`
+	CSSPageSize bool       `json:"cssPageSize"`
+	Landscape   bool       `json:"landscape"`
 }
 
 type PaperSize struct {
 	Width  float64 `json:"width"`
 	Height float64 `json:"height"`
+}
+
+func (p *PaperSize) get() PaperSize {
+	if p == nil {
+		return PaperSize{
+			Width:  8.27,
+			Height: 11.69,
+		}
+	}
+	return *p
 }
 
 type Margin struct {
@@ -97,6 +107,7 @@ func PrintHTML(ctx context.Context, w io.Writer, r HTMLRequest) error {
 		chromedp.Sleep(time.Second),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			margin := r.Margin.get()
+			paper := r.Paper.get()
 			if r.Header == "" {
 				r.Header = "<span></span>"
 			}
@@ -105,8 +116,8 @@ func PrintHTML(ctx context.Context, w io.Writer, r HTMLRequest) error {
 			}
 
 			buf, _, err := page.PrintToPDF().
-				WithPaperWidth(r.Paper.Width).
-				WithPaperHeight(r.Paper.Height).
+				WithPaperWidth(paper.Width).
+				WithPaperHeight(paper.Height).
 				WithScale(r.Scale).
 				WithPrintBackground(defaultIfNil(r.Background, true)).
 				WithMarginTop(margin.Top).
