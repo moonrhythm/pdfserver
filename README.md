@@ -10,18 +10,19 @@
 
 ## Body
 
-| Name        | Type             | Desc                   | Default         | Example               |
-|-------------|------------------|------------------------|-----------------|-----------------------|
-| content     | string           | HTML for render to pdf |                 | `<h1>PDF Server</h1>` |
-| scale       | number           | Print scale            | 1.0             | 1.0                   |
-| paper       | PaperSize        | Paper size             | A4              |                       |
-| margin      | Margin or number | Margin                 | 0.4             |                       |
-| background  | boolean          | Print Background       | true            | false                 |
-| pageRanges  | string           | Page ranges            |                 | "1-4,7"               |
-| header      | string           | Header template        | `<span></span>` |                       |
-| footer      | string           | Footer template        | `<span></span>` |                       |
-| cssPageSize | boolean          | Use CSS page size      | false           |                       |
-| landscape   | boolean          | Landscape              | false           |                       |
+| Name        | Type             | Desc                      | Default         | Example               |
+|-------------|------------------|---------------------------|-----------------|-----------------------|
+| content     | string           | HTML for render to pdf    |                 | `<h1>PDF Server</h1>` |
+| scale       | number           | Print scale               | 1.0             | 1.0                   |
+| paper       | PaperSize        | Paper size                | A4              |                       |
+| margin      | Margin or number | Margin                    | 0.4             |                       |
+| background  | boolean          | Print Background          | true            | false                 |
+| pageRanges  | string           | Page ranges               |                 | "1-4,7"               |
+| header      | string           | Header template           | `<span></span>` |                       |
+| footer      | string           | Footer template           | `<span></span>` |                       |
+| cssPageSize | boolean          | Use CSS page size         | false           |                       |
+| landscape   | boolean          | Landscape                 | false           |                       |
+| wait        | number           | Wait time in milliseconds | 1000            |                       |
 
 ### PaperSize
 

@@ -22,6 +22,7 @@ type HTMLRequest struct {
 	Footer      string     `json:"footer"`
 	CSSPageSize bool       `json:"cssPageSize"`
 	Landscape   bool       `json:"landscape"`
+	Wait        *int       `json:"wait"`
 }
 
 type PaperSize struct {
@@ -94,6 +95,11 @@ func (m *Margin) get() Margin {
 }
 
 func PrintHTML(ctx context.Context, w io.Writer, r HTMLRequest) error {
+	wait := time.Second
+	if r.Wait != nil {
+		wait = time.Duration(*r.Wait) * time.Millisecond
+	}
+
 	tasks := chromedp.Tasks{
 		chromedp.Navigate("about:blank"),
 		chromedp.ActionFunc(func(ctx context.Context) error {
@@ -104,7 +110,7 @@ func PrintHTML(ctx context.Context, w io.Writer, r HTMLRequest) error {
 			return page.SetDocumentContent(frameTree.Frame.ID, r.Content).Do(ctx)
 		}),
 		chromedp.WaitReady("body"),
-		chromedp.Sleep(time.Second),
+		chromedp.Sleep(wait),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			margin := r.Margin.get()
 			paper := r.Paper.get()
