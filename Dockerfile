@@ -1,13 +1,16 @@
-FROM golang:1.20.2
+FROM golang:1.20.3-bullseye
 
-ENV CGO_ENABLED=0
 WORKDIR /workspace
 ADD go.mod go.sum ./
 RUN go mod download
 ADD . .
 RUN go build -o .build/pdfserver -ldflags "-w -s" ./cmd/pdfserver
 
-FROM zenika/alpine-chrome
+FROM debian:bullseye-slim
+
+RUN apt-get update && \
+    apt-get install -y chromium && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
